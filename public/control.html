@@ -394,32 +394,43 @@
 
     socket.on('state', (s) => {
       // Live timer
-      liveTimerEl.textContent = s.status === 'idle' ? '—:——' : fmt(s.phaseRemaining);
+      const isCountdown = s.status === 'countdown';
+      liveTimerEl.textContent = s.status === 'idle'
+        ? '—:——'
+        : isCountdown
+          ? s.countdownRemaining
+          : fmt(s.phaseRemaining);
+
       liveTimerEl.className = '';
-      if (s.status === 'finished')  liveTimerEl.classList.add('timer-finished');
-      else if (s.status === 'paused') liveTimerEl.style.opacity = '0.5';
-      else {
-        liveTimerEl.style.opacity = '';
-        if (s.phaseRemaining <= 10 && s.status === 'running')
-          liveTimerEl.classList.add('timer-warning');
-        else if (s.phase === 'rest')
-          liveTimerEl.classList.add('timer-rest');
-      }
+      liveTimerEl.style.opacity = '';
+      if (s.status === 'finished')        liveTimerEl.classList.add('timer-finished');
+      else if (s.status === 'paused')     liveTimerEl.style.opacity = '0.5';
+      else if (isCountdown)               liveTimerEl.style.color = '#fff';
+      else if (s.phaseRemaining <= 10 && s.status === 'running')
+                                          liveTimerEl.classList.add('timer-warning');
+      else if (s.phase === 'rest')        liveTimerEl.classList.add('timer-rest');
 
       // Phase
       const labels = PHASE_LABELS[s.mode] || {};
-      livePhaseEl.textContent = (s.status !== 'idle') ? (labels[s.phase] || '') : '';
+      livePhaseEl.textContent = (s.status !== 'idle' && !isCountdown)
+        ? (labels[s.phase] || '') : '';
       livePhaseEl.className = s.phase === 'rest' ? 'phase-rest' : '';
 
       // Round
-      if (s.mode !== 'countdown' && s.status !== 'idle') {
+      if (s.mode !== 'countdown' && s.status !== 'idle' && !isCountdown) {
         liveRoundEl.textContent = `ROUND ${s.currentRound} / ${s.totalRounds}`;
       } else {
         liveRoundEl.textContent = '';
       }
 
       // Status
-      const statusMap = { idle: 'EN ATTENTE', running: 'EN COURS', paused: 'PAUSE', finished: 'TERMINÉ' };
+      const statusMap = {
+        idle:      'EN ATTENTE',
+        countdown: `DÉMARRAGE DANS ${s.countdownRemaining}…`,
+        running:   'EN COURS',
+        paused:    'PAUSE',
+        finished:  'TERMINÉ'
+      };
       liveStatusEl.textContent = statusMap[s.status] ?? '';
 
       // Boutons & réglages
@@ -427,11 +438,20 @@
         btnStart.style.display = 'none';
         btnPause.style.display = '';
         btnPause.textContent   = '⏸  Pause';
+        btnPause.disabled      = false;
+        settingsPanel.classList.add('locked');
+        document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
+      } else if (isCountdown) {
+        btnStart.style.display = '';
+        btnStart.textContent   = '⏳  Démarrage…';
+        btnStart.disabled      = true;
+        btnPause.style.display = 'none';
         settingsPanel.classList.add('locked');
         document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
       } else if (s.status === 'paused') {
         btnStart.style.display = '';
         btnStart.textContent   = '▶  Reprendre';
+        btnStart.disabled      = false;
         btnPause.style.display = 'none';
         settingsPanel.classList.add('locked');
         document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
@@ -439,6 +459,7 @@
         // idle or finished
         btnStart.style.display = '';
         btnStart.textContent   = s.status === 'finished' ? '↺  Recommencer' : '▶  Démarrer';
+        btnStart.disabled      = false;
         btnPause.style.display = 'none';
         settingsPanel.classList.remove('locked');
         document.querySelectorAll('.tab-btn').forEach(b => b.disabled = false);

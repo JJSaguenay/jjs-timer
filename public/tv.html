@@ -42,6 +42,17 @@
       color: var(--col-dim);
     }
 
+    /* ── Mode label ───────────────────── */
+    #mode-label {
+      position: absolute;
+      top: calc(4vh + clamp(20px, 3vw, 46px));
+      font-size: clamp(11px, 1.2vw, 18px);
+      font-weight: 500;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--col-muted);
+    }
+
     /* ── Phase label ──────────────────── */
     #phase-label {
       font-size: clamp(20px, 4vw, 56px);
@@ -83,7 +94,6 @@
       margin-top: 2vh;
       min-height: clamp(10px, 1.5vw, 22px);
     }
-
     .dot {
       width: clamp(10px, 1.4vw, 20px);
       height: clamp(10px, 1.4vw, 20px);
@@ -131,9 +141,40 @@
       color: #fff;
     }
 
+    /* ── Overlay 3-2-1 ───────────────── */
+    #countdown-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    #countdown-overlay.hidden { display: none; }
+
+    #countdown-number {
+      font-size: clamp(160px, 42vw, 640px);
+      font-weight: 900;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    #countdown-number.go {
+      font-size: clamp(60px, 14vw, 200px);
+      color: var(--col-rest);
+      letter-spacing: 0.1em;
+    }
+
+    @keyframes pop-in {
+      0%   { transform: scale(1.4); opacity: 0; }
+      60%  { transform: scale(0.95); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop { animation: pop-in 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
     /* ══ États ══════════════════════════════════════════════ */
 
-    /* Repos */
     body.phase-rest #phase-label { color: var(--col-rest); }
 
     /* Avertissement */
@@ -146,12 +187,12 @@
     body.warning #timer { animation: pulse-warn 0.5s ease-in-out infinite; }
 
     /* Pause */
-    body.paused #timer       { opacity: 0.45; }
-    body.paused #status-bar  { color: var(--col-warning); }
+    body.paused #timer      { opacity: 0.45; }
+    body.paused #status-bar { color: var(--col-warning); }
 
     /* Terminé */
-    body.finished #timer      { color: var(--col-finish); }
-    body.finished #phase-label{ color: var(--col-finish); }
+    body.finished #timer       { color: var(--col-finish); }
+    body.finished #phase-label { color: var(--col-finish); }
     @keyframes flash-done {
       0%,100% { opacity: 1; }
       50%      { opacity: 0.25; }
@@ -170,7 +211,13 @@
     </span>
   </div>
 
+  <!-- Overlay 3-2-1 -->
+  <div id="countdown-overlay" class="hidden">
+    <div id="countdown-number">3</div>
+  </div>
+
   <div id="gym-name">JIU-JITSU SAGUENAY</div>
+  <div id="mode-label"></div>
   <div id="phase-label"></div>
   <div id="timer">—:——</div>
   <div id="round-info"></div>
@@ -193,55 +240,58 @@
     document.getElementById('sound-overlay').addEventListener('click', unlockAudio);
     document.addEventListener('keydown', unlockAudio, { once: true });
 
-    function beep(freq, dur, vol = 0.6) {
+    function beep(freq, dur, vol = 0.6, delay = 0) {
       if (!audioCtx) return;
       try {
+        const t    = audioCtx.currentTime + delay;
         const osc  = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.type = 'sine';
+        osc.type            = 'sine';
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + dur + 0.05);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
       } catch(e) {}
+    }
+
+    function playGo() {
+      // Montée ré-mi-la : signal de départ net
+      beep(587, 0.10, 0.55, 0.00);
+      beep(659, 0.10, 0.55, 0.11);
+      beep(880, 0.40, 0.60, 0.22);
     }
 
     function playEvent(event, phase) {
       switch(event) {
-        case 'started':
         case 'resumed':
           beep(880, 0.12, 0.4);
           break;
-        case 'warning':
-          beep(1047, 0.08, 0.25);
-          break;
         case 'phase_change':
           if (phase === 'rest') {
-            // Fin de round → 2 bips graves
-            beep(523, 0.18); setTimeout(() => beep(440, 0.28), 200);
+            beep(523, 0.18); beep(440, 0.28, 0.6, 0.20);
           } else {
-            // Fin de repos → 3 bips aigus
-            beep(880, 0.12); setTimeout(() => beep(880, 0.12), 140);
-            setTimeout(() => beep(1047, 0.30), 280);
+            beep(880, 0.12); beep(880, 0.12, 0.6, 0.14); beep(1047, 0.30, 0.6, 0.28);
           }
           break;
         case 'finished':
-          beep(880, 0.35); setTimeout(() => beep(880, 0.35), 400);
-          setTimeout(() => beep(880, 0.55), 800);
+          beep(880, 0.35); beep(880, 0.35, 0.6, 0.40); beep(880, 0.55, 0.6, 0.80);
           break;
       }
     }
 
     // ── Rendu ──────────────────────────────────────────────────────────
-    const timerEl    = document.getElementById('timer');
-    const phaseEl    = document.getElementById('phase-label');
-    const roundEl    = document.getElementById('round-info');
-    const dotsEl     = document.getElementById('round-dots');
-    const statusEl   = document.getElementById('status-bar');
-    const body       = document.body;
+    const timerEl       = document.getElementById('timer');
+    const phaseEl       = document.getElementById('phase-label');
+    const modeLabelEl   = document.getElementById('mode-label');
+    const roundEl       = document.getElementById('round-info');
+    const dotsEl        = document.getElementById('round-dots');
+    const statusEl      = document.getElementById('status-bar');
+    const cdOverlay     = document.getElementById('countdown-overlay');
+    const cdNumEl       = document.getElementById('countdown-number');
+    const body          = document.body;
 
     function fmt(s) {
       const m = Math.floor(s / 60);
@@ -261,32 +311,75 @@
       grappling: 'GRAPPLING TIMER'
     };
 
-    let lastEvent = null;
+    let lastEventSeq    = -1;
+    let lastRemaining   = -1;
+    let lastStatus      = '';
+    let goTimeout       = null;
+
+    function triggerPop() {
+      cdNumEl.classList.remove('pop');
+      void cdNumEl.offsetWidth; // reflow
+      cdNumEl.classList.add('pop');
+    }
 
     const socket = io();
 
     socket.on('state', (s) => {
-      // Son
-      if (s.event && s.event !== lastEvent) {
-        playEvent(s.event, s.phase);
-      }
-      lastEvent = s.event || null;
 
-      // Timer
+      // ── Compte à rebours 3-2-1 ──────────────────────────────────────
+      if (s.status === 'countdown') {
+        cdOverlay.classList.remove('hidden');
+        cdNumEl.className = 'pop';
+        cdNumEl.textContent = s.countdownRemaining;
+        triggerPop();
+        // Bip court pour chaque chiffre
+        beep(880, 0.10, 0.5);
+        lastStatus = 'countdown';
+        return; // ne pas mettre à jour le reste de l'affichage
+      }
+
+      // ── Transition countdown → running (PARTEZ !) ──────────────────
+      if (s.event === 'started' && lastStatus === 'countdown') {
+        cdOverlay.classList.remove('hidden');
+        cdNumEl.className = 'go pop';
+        cdNumEl.textContent = 'PARTEZ !';
+        triggerPop();
+        playGo();
+        clearTimeout(goTimeout);
+        goTimeout = setTimeout(() => cdOverlay.classList.add('hidden'), 700);
+      } else if (s.status !== 'countdown') {
+        // S'assurer que l'overlay est caché dans tous les autres cas
+        if (lastStatus !== 'countdown') cdOverlay.classList.add('hidden');
+      }
+
+      lastStatus = s.status;
+
+      // ── Sons (hors countdown) ─────────────────────────────────────
+      const isNewEvent = s.eventSeq !== lastEventSeq;
+      lastEventSeq = s.eventSeq;
+
+      if (isNewEvent && s.event) {
+        if (s.event === 'warning') {
+          beep(1047, 0.08, 0.35);
+        } else if (s.event !== 'countdown_tick') {
+          playEvent(s.event, s.phase);
+        }
+      }
+
+      // ── Affichage ─────────────────────────────────────────────────
       timerEl.textContent = s.status === 'idle' ? '—:——' : fmt(s.phaseRemaining);
 
-      // Phase label
       const labels = PHASE_LABELS[s.mode] || {};
       phaseEl.textContent = s.status === 'idle' ? '' : (labels[s.phase] || '');
 
-      // Round info
+      modeLabelEl.textContent = s.status === 'idle' ? (MODE_LABELS[s.mode] || '') : '';
+
       if (s.mode !== 'countdown' && s.status !== 'idle') {
         roundEl.textContent = `ROUND ${s.currentRound} / ${s.totalRounds}`;
       } else {
         roundEl.textContent = '';
       }
 
-      // Status bar
       const statusMap = {
         idle:     'EN ATTENTE',
         running:  '',
@@ -295,22 +388,20 @@
       };
       statusEl.textContent = statusMap[s.status] ?? '';
 
-      // Classes
       body.className = '';
       if (s.status === 'paused')   body.classList.add('paused');
       if (s.status === 'finished') body.classList.add('finished');
-      if (s.phase   === 'rest' && s.status === 'running')
+      if (s.phase === 'rest' && s.status === 'running')
         body.classList.add('phase-rest');
       if (s.status === 'running' && s.phaseRemaining <= 10 && s.phaseRemaining > 0)
         body.classList.add('warning');
 
-      // Dots
       dotsEl.innerHTML = '';
       if (s.totalRounds > 1 && s.mode !== 'countdown') {
         for (let i = 1; i <= s.totalRounds; i++) {
           const d = document.createElement('div');
           d.className = 'dot';
-          if (i < s.currentRound)       d.classList.add('done');
+          if (i < s.currentRound)        d.classList.add('done');
           else if (i === s.currentRound) {
             d.classList.add('current');
             if (s.phase === 'rest') d.classList.add('rest-dot');
@@ -321,8 +412,6 @@
     });
 
     // ── Télécommande Fire Stick ────────────────────────────────────────
-    // Bouton OK = toggle start/pause
-    // Bouton Back/Retour = reset
     document.addEventListener('keydown', (e) => {
       unlockAudio();
       if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13) {

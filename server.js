@@ -8,9 +8,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('/tv', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tv.html')));
+app.get('/tv',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'tv.html')));
 app.get('/control', (req, res) => res.sendFile(path.join(__dirname, 'public', 'control.html')));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'control.html')));
+app.get('/',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'control.html')));
 
 // ─── État du timer ───────────────────────────────────────────────────────────
 
@@ -22,14 +22,16 @@ const DEFAULT_SETTINGS = {
 
 function freshState() {
   return {
-    mode:           'countdown',
-    status:         'idle',      // idle | running | paused | finished
-    phase:          'work',      // work | rest
-    currentRound:   1,
-    totalRounds:    1,
-    phaseRemaining: 300,
-    settings:       JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
-    event:          null         // started | paused | resumed | reset | phase_change | warning | finished
+    mode:               'countdown',
+    status:             'idle',       // idle | countdown | running | paused | finished
+    phase:              'work',       // work | rest
+    currentRound:       1,
+    totalRounds:        1,
+    phaseRemaining:     300,
+    countdownRemaining: 0,            // 3 → 2 → 1 avant le départ
+    settings:           JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+    event:              null,
+    eventSeq:           0             // incrémenté à chaque événement pour distinguer les répétitions
   };
 }
 
@@ -57,7 +59,28 @@ function stopInterval() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
 
+function setEvent(name) {
+  state.event    = name;
+  state.eventSeq = (state.eventSeq + 1) % 100000;
+}
+
 function tick() {
+
+  // ── Phase de compte à rebours 3-2-1 ──────────────────────────────────────
+  if (state.status === 'countdown') {
+    state.countdownRemaining--;
+    if (state.countdownRemaining <= 0) {
+      // Transition vers le vrai timer
+      state.status = 'running';
+      setEvent('started');
+    } else {
+      setEvent('countdown_tick');
+    }
+    io.emit('state', state);
+    return;
+  }
+
+  // ── Tick normal ───────────────────────────────────────────────────────────
   state.event = null;
   state.phaseRemaining--;
 
@@ -66,31 +89,30 @@ function tick() {
     if (state.mode === 'countdown') {
       state.phaseRemaining = 0;
       state.status = 'finished';
-      state.event = 'finished';
+      setEvent('finished');
       stopInterval();
     } else {
       if (state.phase === 'work') {
-        // Passer au repos
-        state.phase = 'rest';
+        state.phase          = 'rest';
         state.phaseRemaining = getPhaseSeconds(state.mode, 'rest', state.settings);
-        state.event = 'phase_change';
+        setEvent('phase_change');
       } else {
-        // Repos terminé
         if (state.currentRound < state.totalRounds) {
           state.currentRound++;
-          state.phase = 'work';
+          state.phase          = 'work';
           state.phaseRemaining = getPhaseSeconds(state.mode, 'work', state.settings);
-          state.event = 'phase_change';
+          setEvent('phase_change');
         } else {
           state.phaseRemaining = 0;
-          state.status = 'finished';
-          state.event = 'finished';
+          state.status         = 'finished';
+          setEvent('finished');
           stopInterval();
         }
       }
     }
-  } else if (state.phaseRemaining <= 3 && state.phaseRemaining > 0) {
-    state.event = 'warning';
+  } else if (state.phaseRemaining <= 3) {
+    // Bips des 3 dernières secondes — eventSeq garantit l'unicité
+    setEvent('warning');
   }
 
   io.emit('state', state);
@@ -99,17 +121,16 @@ function tick() {
 // ─── Gestion des commandes ───────────────────────────────────────────────────
 
 function handleCommand(action, payload) {
-  state.event = null;
 
   switch (action) {
 
     case 'start': {
-      if (state.status === 'running') return; // déjà en cours
+      if (state.status === 'running' || state.status === 'countdown') return;
 
       if (state.status === 'paused') {
-        // Reprendre
+        // Reprendre sans countdown
         state.status = 'running';
-        state.event = 'resumed';
+        setEvent('resumed');
         timerInterval = setInterval(tick, 1000);
         break;
       }
@@ -118,13 +139,14 @@ function handleCommand(action, payload) {
       if (payload?.mode)     state.mode     = payload.mode;
       if (payload?.settings) state.settings = { ...state.settings, ...payload.settings };
 
-      state.status        = 'running';
-      state.phase         = 'work';
-      state.currentRound  = 1;
-      state.totalRounds   = getRounds(state.mode, state.settings);
-      state.phaseRemaining = getPhaseSeconds(state.mode, 'work', state.settings);
-      state.event         = 'started';
-      timerInterval       = setInterval(tick, 1000);
+      state.status             = 'countdown';
+      state.countdownRemaining = 3;
+      state.phase              = 'work';
+      state.currentRound       = 1;
+      state.totalRounds        = getRounds(state.mode, state.settings);
+      state.phaseRemaining     = getPhaseSeconds(state.mode, 'work', state.settings);
+      setEvent('countdown_tick');
+      timerInterval = setInterval(tick, 1000);
       break;
     }
 
@@ -132,14 +154,17 @@ function handleCommand(action, payload) {
       if (state.status !== 'running') return;
       stopInterval();
       state.status = 'paused';
-      state.event  = 'paused';
+      setEvent('paused');
       break;
     }
 
     case 'toggle': {
-      // Pour la télécommande Fire Stick (touche OK)
       if (state.status === 'running') {
         handleCommand('pause', null);
+        return;
+      } else if (state.status === 'countdown') {
+        // Annuler le countdown = reset
+        handleCommand('reset', null);
         return;
       } else {
         handleCommand('start', payload);
@@ -151,11 +176,11 @@ function handleCommand(action, payload) {
       stopInterval();
       const savedSettings = state.settings;
       const savedMode     = state.mode;
-      state = freshState();
+      state          = freshState();
       state.settings = savedSettings;
       state.mode     = savedMode;
       state.phaseRemaining = getPhaseSeconds(state.mode, 'work', state.settings);
-      state.event = 'reset';
+      setEvent('reset');
       break;
     }
 
