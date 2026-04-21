@@ -8,14 +8,14 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --col-bg:      #090909;
+      --col-bg:      #0c0c0c;
       --col-text:    #ffffff;
-      --col-dim:     #444;
+      --col-dim:     #4a4a4a;
       --col-muted:   #222;
-      --col-work:    #00c8ff;
-      --col-rest:    #34d058;
-      --col-warning: #ff9f0a;
-      --col-finish:  #ff3b30;
+      --col-work:    #C8102E;   /* Rouge JJS */
+      --col-rest:    #888888;   /* Gris repos */
+      --col-warning: #E8600A;   /* Orange avertissement */
+      --col-finish:  #C8102E;   /* Rouge JJS */
     }
 
     html, body {
@@ -32,12 +32,27 @@
     }
 
     /* ── Logo ─────────────────────────── */
-    #gym-name {
+    #logo-wrap {
       position: absolute;
-      top: 4vh;
-      font-size: clamp(14px, 1.8vw, 28px);
+      top: 2.5vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5vh;
+    }
+
+    #gym-logo {
+      height: clamp(40px, 7vh, 90px);
+      width: auto;
+      /* Rend le fond blanc transparent sur fond noir tout en gardant le rouge intact */
+      filter: invert(1) hue-rotate(180deg);
+      opacity: 0.92;
+    }
+
+    #gym-name {
+      font-size: clamp(10px, 1.3vw, 20px);
       font-weight: 300;
-      letter-spacing: 0.5em;
+      letter-spacing: 0.55em;
       text-transform: uppercase;
       color: var(--col-dim);
     }
@@ -45,12 +60,12 @@
     /* ── Mode label ───────────────────── */
     #mode-label {
       position: absolute;
-      top: calc(4vh + clamp(20px, 3vw, 46px));
-      font-size: clamp(11px, 1.2vw, 18px);
+      top: calc(2.5vh + clamp(50px, 9.5vh, 120px));
+      font-size: clamp(10px, 1.1vw, 16px);
       font-weight: 500;
       letter-spacing: 0.4em;
       text-transform: uppercase;
-      color: var(--col-muted);
+      color: #333;
     }
 
     /* ── Phase label ──────────────────── */
@@ -101,14 +116,24 @@
       background: var(--col-muted);
       transition: background 0.3s;
     }
-    .dot.done    { background: #333; }
+    .dot.done    { background: #2a2a2a; }
     .dot.current { background: var(--col-work); }
     .dot.current.rest-dot { background: var(--col-rest); }
+
+    /* ── Barre rouge décorative ───────── */
+    #accent-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 4px;
+      background: var(--col-work);
+      opacity: 0.7;
+    }
 
     /* ── Status bar ───────────────────── */
     #status-bar {
       position: absolute;
-      bottom: 4vh;
+      bottom: 1.8vh;
       font-size: clamp(12px, 1.5vw, 22px);
       letter-spacing: 0.4em;
       color: var(--col-dim);
@@ -119,7 +144,7 @@
     #sound-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.88);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -132,23 +157,25 @@
     #sound-overlay span {
       font-size: clamp(16px, 2.5vw, 36px);
       letter-spacing: 0.3em;
-      color: #888;
+      color: #666;
     }
     #sound-overlay strong {
       font-size: clamp(22px, 4vw, 58px);
-      letter-spacing: 0.5em;
+      letter-spacing: 0.4em;
       font-weight: 700;
-      color: #fff;
+      color: var(--col-work);
     }
 
     /* ── Overlay 3-2-1 ───────────────── */
     #countdown-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.88);
+      background: rgba(10,10,10,0.92);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 3vh;
       z-index: 50;
     }
     #countdown-overlay.hidden { display: none; }
@@ -162,8 +189,8 @@
     }
     #countdown-number.go {
       font-size: clamp(60px, 14vw, 200px);
-      color: var(--col-rest);
-      letter-spacing: 0.1em;
+      color: var(--col-work);
+      letter-spacing: 0.12em;
     }
 
     @keyframes pop-in {
@@ -171,23 +198,25 @@
       60%  { transform: scale(0.95); opacity: 1; }
       100% { transform: scale(1); opacity: 1; }
     }
-    .pop { animation: pop-in 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+    .pop { animation: pop-in 0.32s cubic-bezier(0.22,1,0.36,1) both; }
 
     /* ══ États ══════════════════════════════════════════════ */
 
+    /* Repos */
     body.phase-rest #phase-label { color: var(--col-rest); }
+    body.phase-rest #timer       { color: #cccccc; }
 
     /* Avertissement */
     body.warning #timer       { color: var(--col-warning); }
     body.warning #phase-label { color: var(--col-warning); }
     @keyframes pulse-warn {
       0%,100% { transform: scale(1); }
-      50%      { transform: scale(1.015); }
+      50%      { transform: scale(1.018); }
     }
     body.warning #timer { animation: pulse-warn 0.5s ease-in-out infinite; }
 
     /* Pause */
-    body.paused #timer      { opacity: 0.45; }
+    body.paused #timer      { opacity: 0.4; }
     body.paused #status-bar { color: var(--col-warning); }
 
     /* Terminé */
@@ -195,19 +224,19 @@
     body.finished #phase-label { color: var(--col-finish); }
     @keyframes flash-done {
       0%,100% { opacity: 1; }
-      50%      { opacity: 0.25; }
+      50%      { opacity: 0.2; }
     }
     body.finished #timer { animation: flash-done 1s ease-in-out infinite; }
   </style>
 </head>
 <body>
 
-  <!-- Overlay activation son (requis par les navigateurs) -->
+  <!-- Overlay activation son -->
   <div id="sound-overlay">
     <span>APPUYER POUR ACTIVER</span>
     <strong>▶ OK</strong>
-    <span style="font-size:clamp(11px,1.4vw,20px); margin-top:1vh;">
-      (télécommande ou clic)
+    <span style="font-size:clamp(11px,1.4vw,20px); margin-top:1vh; color:#444">
+      télécommande ou clic
     </span>
   </div>
 
@@ -216,13 +245,19 @@
     <div id="countdown-number">3</div>
   </div>
 
-  <div id="gym-name">JIU-JITSU SAGUENAY</div>
+  <!-- Logo + nom -->
+  <div id="logo-wrap">
+    <img id="gym-logo" src="/logo.png" alt="Jiu-Jitsu Saguenay" onerror="this.style.display='none';document.getElementById('gym-name').style.color='#555'">
+    <div id="gym-name">JIU-JITSU SAGUENAY</div>
+  </div>
+
   <div id="mode-label"></div>
   <div id="phase-label"></div>
   <div id="timer">—:——</div>
   <div id="round-info"></div>
   <div id="round-dots"></div>
   <div id="status-bar">EN ATTENTE</div>
+  <div id="accent-bar"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -258,7 +293,6 @@
     }
 
     function playGo() {
-      // Montée ré-mi-la : signal de départ net
       beep(587, 0.10, 0.55, 0.00);
       beep(659, 0.10, 0.55, 0.11);
       beep(880, 0.40, 0.60, 0.22);
@@ -283,15 +317,15 @@
     }
 
     // ── Rendu ──────────────────────────────────────────────────────────
-    const timerEl       = document.getElementById('timer');
-    const phaseEl       = document.getElementById('phase-label');
-    const modeLabelEl   = document.getElementById('mode-label');
-    const roundEl       = document.getElementById('round-info');
-    const dotsEl        = document.getElementById('round-dots');
-    const statusEl      = document.getElementById('status-bar');
-    const cdOverlay     = document.getElementById('countdown-overlay');
-    const cdNumEl       = document.getElementById('countdown-number');
-    const body          = document.body;
+    const timerEl     = document.getElementById('timer');
+    const phaseEl     = document.getElementById('phase-label');
+    const modeLabelEl = document.getElementById('mode-label');
+    const roundEl     = document.getElementById('round-info');
+    const dotsEl      = document.getElementById('round-dots');
+    const statusEl    = document.getElementById('status-bar');
+    const cdOverlay   = document.getElementById('countdown-overlay');
+    const cdNumEl     = document.getElementById('countdown-number');
+    const body        = document.body;
 
     function fmt(s) {
       const m = Math.floor(s / 60);
@@ -311,14 +345,13 @@
       grappling: 'GRAPPLING TIMER'
     };
 
-    let lastEventSeq    = -1;
-    let lastRemaining   = -1;
-    let lastStatus      = '';
-    let goTimeout       = null;
+    let lastEventSeq = -1;
+    let lastStatus   = '';
+    let goTimeout    = null;
 
     function triggerPop() {
       cdNumEl.classList.remove('pop');
-      void cdNumEl.offsetWidth; // reflow
+      void cdNumEl.offsetWidth;
       cdNumEl.classList.add('pop');
     }
 
@@ -332,13 +365,12 @@
         cdNumEl.className = 'pop';
         cdNumEl.textContent = s.countdownRemaining;
         triggerPop();
-        // Bip court pour chaque chiffre
         beep(880, 0.10, 0.5);
         lastStatus = 'countdown';
-        return; // ne pas mettre à jour le reste de l'affichage
+        return;
       }
 
-      // ── Transition countdown → running (PARTEZ !) ──────────────────
+      // ── PARTEZ ! ─────────────────────────────────────────────────────
       if (s.event === 'started' && lastStatus === 'countdown') {
         cdOverlay.classList.remove('hidden');
         cdNumEl.className = 'go pop';
@@ -348,13 +380,12 @@
         clearTimeout(goTimeout);
         goTimeout = setTimeout(() => cdOverlay.classList.add('hidden'), 700);
       } else if (s.status !== 'countdown') {
-        // S'assurer que l'overlay est caché dans tous les autres cas
         if (lastStatus !== 'countdown') cdOverlay.classList.add('hidden');
       }
 
       lastStatus = s.status;
 
-      // ── Sons (hors countdown) ─────────────────────────────────────
+      // ── Sons ─────────────────────────────────────────────────────────
       const isNewEvent = s.eventSeq !== lastEventSeq;
       lastEventSeq = s.eventSeq;
 
