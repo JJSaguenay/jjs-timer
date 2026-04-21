@@ -11,11 +11,11 @@
       --col-bg:      #0c0c0c;
       --col-text:    #ffffff;
       --col-dim:     #4a4a4a;
-      --col-muted:   #222;
-      --col-work:    #C8102E;   /* Rouge JJS */
-      --col-rest:    #888888;   /* Gris repos */
-      --col-warning: #E8600A;   /* Orange avertissement */
-      --col-finish:  #C8102E;   /* Rouge JJS */
+      --col-muted:   #1e1e1e;
+      --col-work:    #C8102E;
+      --col-rest:    #888888;
+      --col-warning: #E8600A;
+      --col-finish:  #C8102E;
     }
 
     html, body {
@@ -23,34 +23,83 @@
       background: var(--col-bg);
       color: var(--col-text);
       font-family: 'Helvetica Neue', Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       overflow: hidden;
       user-select: none;
     }
 
-    /* ── Logo ─────────────────────────── */
-    #logo-wrap {
+    /* ── Centrage absolu du timer ─────── */
+    #center {
       position: absolute;
-      top: 2.5vh;
+      inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5vh;
+      justify-content: center;
+      gap: 0;
     }
 
+    /* ── Timer ────────────────────────── */
+    #timer {
+      font-size: 35vw;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 0.88;
+      letter-spacing: -0.03em;
+      color: var(--col-text);
+      transition: color 0.4s;
+      will-change: transform, color;
+      text-align: center;
+    }
+
+    /* ── Phase label — sous le timer ──── */
+    #phase-label {
+      font-size: clamp(18px, 3.5vw, 52px);
+      font-weight: 700;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--col-work);
+      min-height: 1.1em;
+      margin-top: 1.5vh;
+      transition: color 0.4s;
+    }
+
+    /* ── Round dots ───────────────────── */
+    #round-dots {
+      display: flex;
+      gap: clamp(8px, 1.4vw, 22px);
+      margin-top: 2vh;
+      min-height: clamp(12px, 1.8vw, 26px);
+    }
+    .dot {
+      width: clamp(12px, 1.6vw, 24px);
+      height: clamp(12px, 1.6vw, 24px);
+      border-radius: 50%;
+      background: var(--col-muted);
+      transition: background 0.3s;
+    }
+    .dot.done    { background: #2a2a2a; }
+    .dot.current { background: var(--col-work); }
+    .dot.current.rest-dot { background: var(--col-rest); }
+
+    /* ── Logo — coin supérieur gauche ──── */
+    #logo-wrap {
+      position: absolute;
+      top: 3vh;
+      left: 0; right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6vh;
+      pointer-events: none;
+    }
     #gym-logo {
-      height: clamp(40px, 7vh, 90px);
+      height: clamp(38px, 6.5vh, 82px);
       width: auto;
-      /* Rend le fond blanc transparent sur fond noir tout en gardant le rouge intact */
       filter: invert(1) hue-rotate(180deg);
-      opacity: 0.92;
+      opacity: 0.90;
     }
-
     #gym-name {
-      font-size: clamp(10px, 1.3vw, 20px);
+      font-size: clamp(9px, 1.1vw, 18px);
       font-weight: 300;
       letter-spacing: 0.55em;
       text-transform: uppercase;
@@ -60,111 +109,64 @@
     /* ── Mode label ───────────────────── */
     #mode-label {
       position: absolute;
-      top: calc(2.5vh + clamp(50px, 9.5vh, 120px));
-      font-size: clamp(10px, 1.1vw, 16px);
+      top: 3vh;
+      right: 3vw;
+      font-size: clamp(10px, 1vw, 15px);
       font-weight: 500;
-      letter-spacing: 0.4em;
+      letter-spacing: 0.35em;
       text-transform: uppercase;
-      color: #333;
-    }
-
-    /* ── Phase label ──────────────────── */
-    #phase-label {
-      font-size: clamp(20px, 4vw, 56px);
-      font-weight: 700;
-      letter-spacing: 0.4em;
-      text-transform: uppercase;
-      color: var(--col-work);
-      min-height: 1.2em;
-      margin-bottom: 1vh;
-      transition: color 0.4s;
-    }
-
-    /* ── Timer ────────────────────────── */
-    #timer {
-      font-size: clamp(80px, 26vw, 420px);
-      font-weight: 900;
-      font-variant-numeric: tabular-nums;
-      line-height: 0.9;
-      letter-spacing: -0.02em;
-      color: var(--col-text);
-      transition: color 0.4s;
-      will-change: transform;
+      color: #2e2e2e;
     }
 
     /* ── Round info ───────────────────── */
     #round-info {
-      font-size: clamp(14px, 2.2vw, 34px);
-      font-weight: 400;
-      letter-spacing: 0.25em;
-      color: var(--col-dim);
-      margin-top: 2vh;
-      min-height: 1.4em;
-    }
-
-    /* ── Round dots ───────────────────── */
-    #round-dots {
-      display: flex;
-      gap: clamp(6px, 1.2vw, 18px);
-      margin-top: 2vh;
-      min-height: clamp(10px, 1.5vw, 22px);
-    }
-    .dot {
-      width: clamp(10px, 1.4vw, 20px);
-      height: clamp(10px, 1.4vw, 20px);
-      border-radius: 50%;
-      background: var(--col-muted);
-      transition: background 0.3s;
-    }
-    .dot.done    { background: #2a2a2a; }
-    .dot.current { background: var(--col-work); }
-    .dot.current.rest-dot { background: var(--col-rest); }
-
-    /* ── Barre rouge décorative ───────── */
-    #accent-bar {
       position: absolute;
-      bottom: 0;
-      left: 0; right: 0;
-      height: 4px;
-      background: var(--col-work);
-      opacity: 0.7;
+      top: 3vh;
+      left: 3vw;
+      font-size: clamp(12px, 1.6vw, 26px);
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--col-dim);
     }
 
     /* ── Status bar ───────────────────── */
     #status-bar {
       position: absolute;
-      bottom: 1.8vh;
-      font-size: clamp(12px, 1.5vw, 22px);
-      letter-spacing: 0.4em;
+      bottom: 3vh;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: clamp(12px, 1.4vw, 22px);
+      letter-spacing: 0.45em;
       color: var(--col-dim);
       text-transform: uppercase;
+    }
+
+    /* ── Barre rouge bas ─────────────── */
+    #accent-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 5px;
+      background: var(--col-work);
+      opacity: 0.6;
     }
 
     /* ── Overlay son ─────────────────── */
     #sound-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.88);
+      background: rgba(0,0,0,0.90);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2vh;
+      gap: 3vh;
       z-index: 99;
       cursor: pointer;
     }
     #sound-overlay.hidden { display: none; }
-    #sound-overlay span {
-      font-size: clamp(16px, 2.5vw, 36px);
-      letter-spacing: 0.3em;
-      color: #666;
-    }
-    #sound-overlay strong {
-      font-size: clamp(22px, 4vw, 58px);
-      letter-spacing: 0.4em;
-      font-weight: 700;
-      color: var(--col-work);
-    }
+    #sound-overlay .so-hint  { font-size: clamp(14px, 2vw, 28px); letter-spacing: 0.35em; color: #555; }
+    #sound-overlay .so-cta   { font-size: clamp(28px, 5vw, 72px); font-weight: 900; letter-spacing: 0.3em; color: var(--col-work); }
+    #sound-overlay .so-small { font-size: clamp(11px, 1.2vw, 18px); color: #333; letter-spacing: 0.3em; }
 
     /* ── Overlay 3-2-1 ───────────────── */
     #countdown-overlay {
@@ -172,72 +174,62 @@
       inset: 0;
       background: rgba(10,10,10,0.92);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3vh;
       z-index: 50;
     }
     #countdown-overlay.hidden { display: none; }
-
     #countdown-number {
-      font-size: clamp(160px, 42vw, 640px);
+      font-size: 45vw;
       font-weight: 900;
       color: #fff;
       font-variant-numeric: tabular-nums;
       line-height: 1;
+      letter-spacing: -0.04em;
     }
     #countdown-number.go {
-      font-size: clamp(60px, 14vw, 200px);
+      font-size: clamp(60px, 16vw, 240px);
       color: var(--col-work);
-      letter-spacing: 0.12em;
+      letter-spacing: 0.08em;
     }
-
     @keyframes pop-in {
-      0%   { transform: scale(1.4); opacity: 0; }
-      60%  { transform: scale(0.95); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+      0%   { transform: scale(1.5); opacity: 0; }
+      60%  { transform: scale(0.93); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
     }
-    .pop { animation: pop-in 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+    .pop { animation: pop-in 0.3s cubic-bezier(0.22,1,0.36,1) both; }
 
     /* ══ États ══════════════════════════════════════════════ */
-
-    /* Repos */
     body.phase-rest #phase-label { color: var(--col-rest); }
-    body.phase-rest #timer       { color: #cccccc; }
+    body.phase-rest #timer       { color: #b0b0b0; }
 
-    /* Avertissement */
-    body.warning #timer       { color: var(--col-warning); }
-    body.warning #phase-label { color: var(--col-warning); }
+    body.warning #timer        { color: var(--col-warning); }
+    body.warning #phase-label  { color: var(--col-warning); }
     @keyframes pulse-warn {
       0%,100% { transform: scale(1); }
-      50%      { transform: scale(1.018); }
+      50%      { transform: scale(1.02); }
     }
-    body.warning #timer { animation: pulse-warn 0.5s ease-in-out infinite; }
+    body.warning #timer { animation: pulse-warn 0.45s ease-in-out infinite; }
 
-    /* Pause */
-    body.paused #timer      { opacity: 0.4; }
+    body.paused #timer      { opacity: 0.38; }
     body.paused #status-bar { color: var(--col-warning); }
 
-    /* Terminé */
     body.finished #timer       { color: var(--col-finish); }
     body.finished #phase-label { color: var(--col-finish); }
     @keyframes flash-done {
       0%,100% { opacity: 1; }
-      50%      { opacity: 0.2; }
+      50%      { opacity: 0.15; }
     }
-    body.finished #timer { animation: flash-done 1s ease-in-out infinite; }
+    body.finished #timer { animation: flash-done 0.9s ease-in-out infinite; }
   </style>
 </head>
 <body>
 
-  <!-- Overlay activation son -->
+  <!-- Overlay son -->
   <div id="sound-overlay">
-    <span>APPUYER POUR ACTIVER</span>
-    <strong>▶ OK</strong>
-    <span style="font-size:clamp(11px,1.4vw,20px); margin-top:1vh; color:#444">
-      télécommande ou clic
-    </span>
+    <div class="so-hint">APPUYER POUR ACTIVER</div>
+    <div class="so-cta">▶ OK</div>
+    <div class="so-small">TÉLÉCOMMANDE OU CLIC</div>
   </div>
 
   <!-- Overlay 3-2-1 -->
@@ -245,17 +237,27 @@
     <div id="countdown-number">3</div>
   </div>
 
-  <!-- Logo + nom -->
+  <!-- Logo -->
   <div id="logo-wrap">
-    <img id="gym-logo" src="/logo.png" alt="Jiu-Jitsu Saguenay" onerror="this.style.display='none';document.getElementById('gym-name').style.color='#555'">
+    <img id="gym-logo" src="/logo.png" alt="Jiu-Jitsu Saguenay"
+         onerror="this.style.display='none'">
     <div id="gym-name">JIU-JITSU SAGUENAY</div>
   </div>
 
+  <!-- Mode (coin droit) -->
   <div id="mode-label"></div>
-  <div id="phase-label"></div>
-  <div id="timer">—:——</div>
+
+  <!-- Round (coin gauche) -->
   <div id="round-info"></div>
-  <div id="round-dots"></div>
+
+  <!-- Centre absolu : timer + phase + dots -->
+  <div id="center">
+    <div id="timer">—:——</div>
+    <div id="phase-label"></div>
+    <div id="round-dots"></div>
+  </div>
+
+  <!-- Status bas -->
   <div id="status-bar">EN ATTENTE</div>
   <div id="accent-bar"></div>
 
@@ -263,17 +265,34 @@
   <script>
     // ── Audio ──────────────────────────────────────────────────────────
     let audioCtx = null;
+    let audioUnlocked = false;
 
     function unlockAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioUnlocked) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        audioCtx.resume().then(() => {
+          audioUnlocked = true;
+          document.getElementById('sound-overlay').classList.add('hidden');
+        });
+      } catch(e) {
+        console.warn('Audio unlock failed:', e);
       }
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      document.getElementById('sound-overlay').classList.add('hidden');
     }
 
-    document.getElementById('sound-overlay').addEventListener('click', unlockAudio);
-    document.addEventListener('keydown', unlockAudio, { once: true });
+    // Tenter à chaque interaction utilisateur
+    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach(evt => {
+      document.addEventListener(evt, unlockAudio);
+    });
+
+    // Re-tenter à chaque fois que l'onglet redevient actif
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && audioCtx?.state === 'suspended') {
+        audioCtx.resume();
+      }
+    });
 
     function beep(freq, dur, vol = 0.6, delay = 0) {
       if (!audioCtx) return;
@@ -295,13 +314,13 @@
     function playGo() {
       beep(587, 0.10, 0.55, 0.00);
       beep(659, 0.10, 0.55, 0.11);
-      beep(880, 0.40, 0.60, 0.22);
+      beep(880, 0.45, 0.65, 0.22);
     }
 
     function playEvent(event, phase) {
       switch(event) {
         case 'resumed':
-          beep(880, 0.12, 0.4);
+          beep(880, 0.12, 0.45);
           break;
         case 'phase_change':
           if (phase === 'rest') {
@@ -311,12 +330,12 @@
           }
           break;
         case 'finished':
-          beep(880, 0.35); beep(880, 0.35, 0.6, 0.40); beep(880, 0.55, 0.6, 0.80);
+          beep(880, 0.35); beep(880, 0.35, 0.6, 0.40); beep(880, 0.55, 0.6, 0.85);
           break;
       }
     }
 
-    // ── Rendu ──────────────────────────────────────────────────────────
+    // ── Éléments DOM ──────────────────────────────────────────────────
     const timerEl     = document.getElementById('timer');
     const phaseEl     = document.getElementById('phase-label');
     const modeLabelEl = document.getElementById('mode-label');
@@ -359,13 +378,16 @@
 
     socket.on('state', (s) => {
 
+      // Tenter de débloquer l'audio à chaque event (sans interaction directe, surtout utile sur desktop)
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+
       // ── Compte à rebours 3-2-1 ──────────────────────────────────────
       if (s.status === 'countdown') {
         cdOverlay.classList.remove('hidden');
         cdNumEl.className = 'pop';
         cdNumEl.textContent = s.countdownRemaining;
         triggerPop();
-        beep(880, 0.10, 0.5);
+        beep(880, 0.10, 0.55);
         lastStatus = 'countdown';
         return;
       }
@@ -378,9 +400,9 @@
         triggerPop();
         playGo();
         clearTimeout(goTimeout);
-        goTimeout = setTimeout(() => cdOverlay.classList.add('hidden'), 700);
-      } else if (s.status !== 'countdown') {
-        if (lastStatus !== 'countdown') cdOverlay.classList.add('hidden');
+        goTimeout = setTimeout(() => cdOverlay.classList.add('hidden'), 750);
+      } else if (lastStatus !== 'countdown') {
+        cdOverlay.classList.add('hidden');
       }
 
       lastStatus = s.status;
@@ -391,7 +413,7 @@
 
       if (isNewEvent && s.event) {
         if (s.event === 'warning') {
-          beep(1047, 0.08, 0.35);
+          beep(1047, 0.08, 0.38);
         } else if (s.event !== 'countdown_tick') {
           playEvent(s.event, s.phase);
         }
@@ -444,7 +466,6 @@
 
     // ── Télécommande Fire Stick ────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
-      unlockAudio();
       if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13) {
         socket.emit('command', { action: 'toggle' });
         e.preventDefault();
