@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JJS Timer — Contrôle</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #0f0f0f;
+      --surface:  #1a1a1a;
+      --border:   #2a2a2a;
+      --text:     #f0f0f0;
+      --muted:    #666;
+      --work:     #00c8ff;
+      --rest:     #34d058;
+      --warning:  #ff9f0a;
+      --danger:   #ff3b30;
+      --accent:   #00c8ff;
+      --radius:   14px;
+    }
+
+    html { background: var(--bg); }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 env(safe-area-inset-bottom);
+    }
+
+    /* ── Header timer ─────────────────────────────────────── */
+    #live-display {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 20px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    #live-timer {
+      font-size: clamp(52px, 15vw, 90px);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      transition: color 0.3s;
+    }
+
+    #live-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    #live-phase {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--work);
+    }
+    #live-round { font-size: 12px; color: var(--muted); letter-spacing: 0.1em; }
+    #live-status { font-size: 12px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
+
+    /* Couleurs d'état */
+    .timer-warning  { color: var(--warning) !important; }
+    .timer-finished { color: var(--danger)  !important; }
+    .timer-rest     { color: var(--rest)    !important; }
+    .phase-rest     { color: var(--rest)    !important; }
+
+    /* ── Onglets mode ─────────────────────────────────────── */
+    #mode-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 12px 4px 10px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-btn:disabled { opacity: 0.35; cursor: default; }
+
+    /* ── Panneau de réglages ──────────────────────────────── */
+    #settings-panel {
+      padding: 20px;
+      flex: 1;
+    }
+    #settings-panel.locked {
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .setting-group { margin-bottom: 22px; }
+    .setting-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* Contrôle numérique +/- */
+    .num-control {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .num-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 300;
+      padding: 0 20px;
+      height: 56px;
+      cursor: pointer;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .num-btn:active { background: rgba(255,255,255,0.08); }
+    .num-display {
+      flex: 1;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Grille 2 colonnes pour les réglages côte-à-côte */
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* ── Boutons de contrôle ──────────────────────────────── */
+    #controls {
+      padding: 16px 20px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ctrl-btn {
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 18px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      text-transform: uppercase;
+    }
+    .ctrl-btn:active { transform: scale(0.97); opacity: 0.85; }
+    .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+
+    #btn-start  { background: var(--work); color: #000; }
+    #btn-pause  { background: var(--warning); color: #000; }
+    #btn-reset  { background: var(--surface); color: var(--muted); border: 1px solid var(--border); font-size: 14px; padding: 14px; }
+
+    /* État actif : rang unique Start + Reset */
+    .row-running { display: flex; gap: 10px; }
+    .row-running #btn-pause { flex: 2; }
+    .row-running #btn-reset { flex: 1; }
+
+    /* ── Lien TV ──────────────────────────────────────────── */
+    #tv-link-bar {
+      text-align: center;
+      padding: 10px 20px 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #tv-link-bar a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Timer en direct -->
+  <div id="live-display">
+    <div id="live-timer">—:——</div>
+    <div id="live-meta">
+      <div id="live-phase"></div>
+      <div id="live-round"></div>
+      <div id="live-status">EN ATTENTE</div>
+    </div>
+  </div>
+
+  <!-- Onglets mode -->
+  <div id="mode-tabs">
+    <button class="tab-btn active" data-mode="countdown">↩ Rebours</button>
+    <button class="tab-btn"       data-mode="hiit">⚡ HIIT</button>
+    <button class="tab-btn"       data-mode="grappling">🥋 Grappling</button>
+  </div>
+
+  <!-- Réglages -->
+  <div id="settings-panel">
+
+    <!-- Compte à rebours -->
+    <div id="panel-countdown" class="mode-panel">
+      <div class="setting-group">
+        <div class="setting-label">Durée</div>
+        <div class="num-control">
+          <button class="num-btn" data-target="cd-duration" data-step="-30">−</button>
+          <span class="num-display" id="cd-duration-display">5:00</span>
+          <button class="num-btn" data-target="cd-duration" data-step="30">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIIT -->
+    <div id="panel-hiit" class="mode-panel" style="display:none">
+      <div class="settings-row">
+        <div class="setting-group">
+          <div class="setting-label">Travail</div>
+          <div class="num-control">
+            <button class="num-btn" data-target="hiit-work" data-step="-15">−</button>
+            <span class="num-display" id="hiit-work-display">3:00</span>
+            <button class="num-btn" data-target="hiit-work" data-step="15">+</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">Repos</div>
+          <div class="num-control">
+            <button class="num-btn" data-target="hiit-rest" data-step="-15">−</button>
+            <span class="num-display" id="hiit-rest-display">1:00</span>
+            <button class="num-btn" data-target="hiit-rest" data-step="15">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Rounds</div>
+        <div class="num-control">
+          <button class="num-btn" data-target="hiit-rounds" data-step="-1">−</button>
+          <span class="num-display" id="hiit-rounds-display">5</span>
+          <button class="num-btn" data-target="hiit-rounds" data-step="1">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grappling -->
+    <div id="panel-grappling" class="mode-panel" style="display:none">
+      <div class="settings-row">
+        <div class="setting-group">
+          <div class="setting-label">Round</div>
+          <div class="num-control">
+            <button class="num-btn" data-target="grap-round" data-step="-30">−</button>
+            <span class="num-display" id="grap-round-display">5:00</span>
+            <button class="num-btn" data-target="grap-round" data-step="30">+</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">Repos</div>
+          <div class="num-control">
+            <button class="num-btn" data-target="grap-rest" data-step="-15">−</button>
+            <span class="num-display" id="grap-rest-display">1:00</span>
+            <button class="num-btn" data-target="grap-rest" data-step="15">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Rounds</div>
+        <div class="num-control">
+          <button class="num-btn" data-target="grap-rounds" data-step="-1">−</button>
+          <span class="num-display" id="grap-rounds-display">5</span>
+          <button class="num-btn" data-target="grap-rounds" data-step="1">+</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Boutons de contrôle -->
+  <div id="controls">
+    <div id="tv-link-bar">
+      TV → <a id="tv-link" href="/tv" target="_blank">/tv</a>
+      <span style="margin-left:8px;opacity:.4">|</span>
+      <span style="margin-left:8px;">Contrôle → <a id="ctrl-link" href="/control">/control</a></span>
+    </div>
+    <button class="ctrl-btn" id="btn-start">▶  Démarrer</button>
+    <button class="ctrl-btn" id="btn-pause" style="display:none">⏸  Pause</button>
+    <button class="ctrl-btn" id="btn-reset">↺  Réinitialiser</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ── Valeurs par défaut ─────────────────────────────────
+    const values = {
+      'cd-duration':  300,
+      'hiit-work':    180,
+      'hiit-rest':     60,
+      'hiit-rounds':    5,
+      'grap-round':   300,
+      'grap-rest':     60,
+      'grap-rounds':    5
+    };
+
+    const mins = {
+      'cd-duration': 30, 'hiit-work': 15, 'hiit-rest': 15,
+      'hiit-rounds': 1, 'grap-round': 30, 'grap-rest': 15, 'grap-rounds': 1
+    };
+    const maxs = {
+      'cd-duration': 3600, 'hiit-work': 1800, 'hiit-rest': 600,
+      'hiit-rounds': 20, 'grap-round': 1800, 'grap-rest': 600, 'grap-rounds': 20
+    };
+
+    function fmt(s) {
+      if (s < 60) return `0:${String(s).padStart(2,'0')}`;
+      const m = Math.floor(s / 60), sec = s % 60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    }
+
+    function isTime(key) { return key !== 'hiit-rounds' && key !== 'grap-rounds'; }
+
+    function updateDisplay(key) {
+      const el = document.getElementById(key + '-display');
+      if (!el) return;
+      el.textContent = isTime(key) ? fmt(values[key]) : values[key];
+    }
+
+    Object.keys(values).forEach(k => updateDisplay(k));
+
+    // +/- buttons
+    document.querySelectorAll('.num-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key  = btn.dataset.target;
+        const step = parseInt(btn.dataset.step, 10);
+        values[key] = Math.min(maxs[key], Math.max(mins[key], values[key] + step));
+        updateDisplay(key);
+      });
+    });
+
+    // ── Mode tabs ──────────────────────────────────────────
+    let currentMode = 'countdown';
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        currentMode = btn.dataset.mode;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.mode-panel').forEach(p => p.style.display = 'none');
+        document.getElementById('panel-' + currentMode).style.display = '';
+      });
+    });
+
+    // ── Socket ─────────────────────────────────────────────
+    const socket = io();
+
+    const liveTimerEl = document.getElementById('live-timer');
+    const livePhaseEl = document.getElementById('live-phase');
+    const liveRoundEl = document.getElementById('live-round');
+    const liveStatusEl= document.getElementById('live-status');
+    const btnStart     = document.getElementById('btn-start');
+    const btnPause     = document.getElementById('btn-pause');
+    const btnReset     = document.getElementById('btn-reset');
+    const settingsPanel= document.getElementById('settings-panel');
+    const controls     = document.getElementById('controls');
+
+    const PHASE_LABELS = {
+      countdown: { work: '' },
+      hiit:      { work: 'TRAVAIL', rest: 'REPOS' },
+      grappling: { work: 'ROUND',   rest: 'REPOS' }
+    };
+
+    socket.on('state', (s) => {
+      // Live timer
+      liveTimerEl.textContent = s.status === 'idle' ? '—:——' : fmt(s.phaseRemaining);
+      liveTimerEl.className = '';
+      if (s.status === 'finished')  liveTimerEl.classList.add('timer-finished');
+      else if (s.status === 'paused') liveTimerEl.style.opacity = '0.5';
+      else {
+        liveTimerEl.style.opacity = '';
+        if (s.phaseRemaining <= 10 && s.status === 'running')
+          liveTimerEl.classList.add('timer-warning');
+        else if (s.phase === 'rest')
+          liveTimerEl.classList.add('timer-rest');
+      }
+
+      // Phase
+      const labels = PHASE_LABELS[s.mode] || {};
+      livePhaseEl.textContent = (s.status !== 'idle') ? (labels[s.phase] || '') : '';
+      livePhaseEl.className = s.phase === 'rest' ? 'phase-rest' : '';
+
+      // Round
+      if (s.mode !== 'countdown' && s.status !== 'idle') {
+        liveRoundEl.textContent = `ROUND ${s.currentRound} / ${s.totalRounds}`;
+      } else {
+        liveRoundEl.textContent = '';
+      }
+
+      // Status
+      const statusMap = { idle: 'EN ATTENTE', running: 'EN COURS', paused: 'PAUSE', finished: 'TERMINÉ' };
+      liveStatusEl.textContent = statusMap[s.status] ?? '';
+
+      // Boutons & réglages
+      if (s.status === 'running') {
+        btnStart.style.display = 'none';
+        btnPause.style.display = '';
+        btnPause.textContent   = '⏸  Pause';
+        settingsPanel.classList.add('locked');
+        document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
+      } else if (s.status === 'paused') {
+        btnStart.style.display = '';
+        btnStart.textContent   = '▶  Reprendre';
+        btnPause.style.display = 'none';
+        settingsPanel.classList.add('locked');
+        document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
+      } else {
+        // idle or finished
+        btnStart.style.display = '';
+        btnStart.textContent   = s.status === 'finished' ? '↺  Recommencer' : '▶  Démarrer';
+        btnPause.style.display = 'none';
+        settingsPanel.classList.remove('locked');
+        document.querySelectorAll('.tab-btn').forEach(b => b.disabled = false);
+      }
+    });
+
+    // ── Commandes ──────────────────────────────────────────
+    function buildSettings() {
+      return {
+        countdown: { duration:      values['cd-duration'] },
+        hiit:      { workDuration:  values['hiit-work'],
+                     restDuration:  values['hiit-rest'],
+                     rounds:        values['hiit-rounds'] },
+        grappling: { roundDuration: values['grap-round'],
+                     restDuration:  values['grap-rest'],
+                     rounds:        values['grap-rounds'] }
+      };
+    }
+
+    btnStart.addEventListener('click', () => {
+      socket.emit('command', {
+        action: 'start',
+        payload: { mode: currentMode, settings: buildSettings() }
+      });
+    });
+
+    btnPause.addEventListener('click', () => {
+      socket.emit('command', { action: 'pause' });
+    });
+
+    btnReset.addEventListener('click', () => {
+      socket.emit('command', { action: 'reset' });
+    });
+
+    // ── Lien TV (URL absolue) ──────────────────────────────
+    const base = window.location.origin;
+    document.getElementById('tv-link').href   = base + '/tv';
+    document.getElementById('tv-link').textContent = base + '/tv';
+    document.getElementById('ctrl-link').href = base + '/control';
+    document.getElementById('ctrl-link').textContent = base + '/control';
+  </script>
+</body>
+</html>

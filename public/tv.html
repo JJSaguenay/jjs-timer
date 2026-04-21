@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JJS Timer — TV</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --col-bg:      #090909;
+      --col-text:    #ffffff;
+      --col-dim:     #444;
+      --col-muted:   #222;
+      --col-work:    #00c8ff;
+      --col-rest:    #34d058;
+      --col-warning: #ff9f0a;
+      --col-finish:  #ff3b30;
+    }
+
+    html, body {
+      width: 100%; height: 100vh;
+      background: var(--col-bg);
+      color: var(--col-text);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Logo ─────────────────────────── */
+    #gym-name {
+      position: absolute;
+      top: 4vh;
+      font-size: clamp(14px, 1.8vw, 28px);
+      font-weight: 300;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--col-dim);
+    }
+
+    /* ── Phase label ──────────────────── */
+    #phase-label {
+      font-size: clamp(20px, 4vw, 56px);
+      font-weight: 700;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--col-work);
+      min-height: 1.2em;
+      margin-bottom: 1vh;
+      transition: color 0.4s;
+    }
+
+    /* ── Timer ────────────────────────── */
+    #timer {
+      font-size: clamp(80px, 26vw, 420px);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      color: var(--col-text);
+      transition: color 0.4s;
+      will-change: transform;
+    }
+
+    /* ── Round info ───────────────────── */
+    #round-info {
+      font-size: clamp(14px, 2.2vw, 34px);
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      color: var(--col-dim);
+      margin-top: 2vh;
+      min-height: 1.4em;
+    }
+
+    /* ── Round dots ───────────────────── */
+    #round-dots {
+      display: flex;
+      gap: clamp(6px, 1.2vw, 18px);
+      margin-top: 2vh;
+      min-height: clamp(10px, 1.5vw, 22px);
+    }
+
+    .dot {
+      width: clamp(10px, 1.4vw, 20px);
+      height: clamp(10px, 1.4vw, 20px);
+      border-radius: 50%;
+      background: var(--col-muted);
+      transition: background 0.3s;
+    }
+    .dot.done    { background: #333; }
+    .dot.current { background: var(--col-work); }
+    .dot.current.rest-dot { background: var(--col-rest); }
+
+    /* ── Status bar ───────────────────── */
+    #status-bar {
+      position: absolute;
+      bottom: 4vh;
+      font-size: clamp(12px, 1.5vw, 22px);
+      letter-spacing: 0.4em;
+      color: var(--col-dim);
+      text-transform: uppercase;
+    }
+
+    /* ── Overlay son ─────────────────── */
+    #sound-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2vh;
+      z-index: 99;
+      cursor: pointer;
+    }
+    #sound-overlay.hidden { display: none; }
+    #sound-overlay span {
+      font-size: clamp(16px, 2.5vw, 36px);
+      letter-spacing: 0.3em;
+      color: #888;
+    }
+    #sound-overlay strong {
+      font-size: clamp(22px, 4vw, 58px);
+      letter-spacing: 0.5em;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* ══ États ══════════════════════════════════════════════ */
+
+    /* Repos */
+    body.phase-rest #phase-label { color: var(--col-rest); }
+
+    /* Avertissement */
+    body.warning #timer       { color: var(--col-warning); }
+    body.warning #phase-label { color: var(--col-warning); }
+    @keyframes pulse-warn {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.015); }
+    }
+    body.warning #timer { animation: pulse-warn 0.5s ease-in-out infinite; }
+
+    /* Pause */
+    body.paused #timer       { opacity: 0.45; }
+    body.paused #status-bar  { color: var(--col-warning); }
+
+    /* Terminé */
+    body.finished #timer      { color: var(--col-finish); }
+    body.finished #phase-label{ color: var(--col-finish); }
+    @keyframes flash-done {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.25; }
+    }
+    body.finished #timer { animation: flash-done 1s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay activation son (requis par les navigateurs) -->
+  <div id="sound-overlay">
+    <span>APPUYER POUR ACTIVER</span>
+    <strong>▶ OK</strong>
+    <span style="font-size:clamp(11px,1.4vw,20px); margin-top:1vh;">
+      (télécommande ou clic)
+    </span>
+  </div>
+
+  <div id="gym-name">JIU-JITSU SAGUENAY</div>
+  <div id="phase-label"></div>
+  <div id="timer">—:——</div>
+  <div id="round-info"></div>
+  <div id="round-dots"></div>
+  <div id="status-bar">EN ATTENTE</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ── Audio ──────────────────────────────────────────────────────────
+    let audioCtx = null;
+
+    function unlockAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      document.getElementById('sound-overlay').classList.add('hidden');
+    }
+
+    document.getElementById('sound-overlay').addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio, { once: true });
+
+    function beep(freq, dur, vol = 0.6) {
+      if (!audioCtx) return;
+      try {
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + dur + 0.05);
+      } catch(e) {}
+    }
+
+    function playEvent(event, phase) {
+      switch(event) {
+        case 'started':
+        case 'resumed':
+          beep(880, 0.12, 0.4);
+          break;
+        case 'warning':
+          beep(1047, 0.08, 0.25);
+          break;
+        case 'phase_change':
+          if (phase === 'rest') {
+            // Fin de round → 2 bips graves
+            beep(523, 0.18); setTimeout(() => beep(440, 0.28), 200);
+          } else {
+            // Fin de repos → 3 bips aigus
+            beep(880, 0.12); setTimeout(() => beep(880, 0.12), 140);
+            setTimeout(() => beep(1047, 0.30), 280);
+          }
+          break;
+        case 'finished':
+          beep(880, 0.35); setTimeout(() => beep(880, 0.35), 400);
+          setTimeout(() => beep(880, 0.55), 800);
+          break;
+      }
+    }
+
+    // ── Rendu ──────────────────────────────────────────────────────────
+    const timerEl    = document.getElementById('timer');
+    const phaseEl    = document.getElementById('phase-label');
+    const roundEl    = document.getElementById('round-info');
+    const dotsEl     = document.getElementById('round-dots');
+    const statusEl   = document.getElementById('status-bar');
+    const body       = document.body;
+
+    function fmt(s) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    }
+
+    const PHASE_LABELS = {
+      countdown: { work: '' },
+      hiit:      { work: 'TRAVAIL', rest: 'REPOS' },
+      grappling: { work: 'ROUND',   rest: 'REPOS' }
+    };
+
+    const MODE_LABELS = {
+      countdown: 'COMPTE À REBOURS',
+      hiit:      'INTERVALLES HIIT',
+      grappling: 'GRAPPLING TIMER'
+    };
+
+    let lastEvent = null;
+
+    const socket = io();
+
+    socket.on('state', (s) => {
+      // Son
+      if (s.event && s.event !== lastEvent) {
+        playEvent(s.event, s.phase);
+      }
+      lastEvent = s.event || null;
+
+      // Timer
+      timerEl.textContent = s.status === 'idle' ? '—:——' : fmt(s.phaseRemaining);
+
+      // Phase label
+      const labels = PHASE_LABELS[s.mode] || {};
+      phaseEl.textContent = s.status === 'idle' ? '' : (labels[s.phase] || '');
+
+      // Round info
+      if (s.mode !== 'countdown' && s.status !== 'idle') {
+        roundEl.textContent = `ROUND ${s.currentRound} / ${s.totalRounds}`;
+      } else {
+        roundEl.textContent = '';
+      }
+
+      // Status bar
+      const statusMap = {
+        idle:     'EN ATTENTE',
+        running:  '',
+        paused:   '⏸  PAUSE',
+        finished: '✓  TERMINÉ'
+      };
+      statusEl.textContent = statusMap[s.status] ?? '';
+
+      // Classes
+      body.className = '';
+      if (s.status === 'paused')   body.classList.add('paused');
+      if (s.status === 'finished') body.classList.add('finished');
+      if (s.phase   === 'rest' && s.status === 'running')
+        body.classList.add('phase-rest');
+      if (s.status === 'running' && s.phaseRemaining <= 10 && s.phaseRemaining > 0)
+        body.classList.add('warning');
+
+      // Dots
+      dotsEl.innerHTML = '';
+      if (s.totalRounds > 1 && s.mode !== 'countdown') {
+        for (let i = 1; i <= s.totalRounds; i++) {
+          const d = document.createElement('div');
+          d.className = 'dot';
+          if (i < s.currentRound)       d.classList.add('done');
+          else if (i === s.currentRound) {
+            d.classList.add('current');
+            if (s.phase === 'rest') d.classList.add('rest-dot');
+          }
+          dotsEl.appendChild(d);
+        }
+      }
+    });
+
+    // ── Télécommande Fire Stick ────────────────────────────────────────
+    // Bouton OK = toggle start/pause
+    // Bouton Back/Retour = reset
+    document.addEventListener('keydown', (e) => {
+      unlockAudio();
+      if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13) {
+        socket.emit('command', { action: 'toggle' });
+        e.preventDefault();
+      } else if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 8) {
+        socket.emit('command', { action: 'reset' });
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>
