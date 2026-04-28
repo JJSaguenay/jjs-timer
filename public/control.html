@@ -8,214 +8,255 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg:       #0c0c0c;
-      --surface:  #181818;
-      --border:   #2a2a2a;
-      --text:     #f0f0f0;
-      --muted:    #666;
-      --work:     #C8102E;   /* Rouge JJS */
-      --rest:     #888888;   /* Gris repos */
-      --warning:  #E8600A;   /* Orange avertissement */
-      --danger:   #C8102E;
-      --accent:   #C8102E;   /* Rouge JJS */
-      --radius:   14px;
+      --bg:      #0a0a0a;
+      --card:    rgba(255,255,255,0.06);
+      --border:  rgba(255,255,255,0.10);
+      --text:    #f0f0f0;
+      --muted:   #555;
+      --red:     #C8102E;
+      --orange:  #E8600A;
+      --gray:    #888;
+      --green:   #22c55e;
+      --r:       16px;
     }
 
-    html { background: var(--bg); }
-
-    body {
+    html, body {
       background: var(--bg);
       color: var(--text);
       font-family: 'Helvetica Neue', Arial, sans-serif;
+      height: 100%;
       min-height: 100svh;
+    }
+
+    body {
       display: flex;
       flex-direction: column;
       max-width: 480px;
       margin: 0 auto;
-      padding: 0 0 env(safe-area-inset-bottom);
+      padding: env(safe-area-inset-top, 12px) 16px
+               calc(env(safe-area-inset-bottom, 0px) + 16px);
+      gap: 14px;
     }
 
-    /* ── Header timer ─────────────────────────────────────── */
-    #live-display {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 18px 20px 14px;
+    /* ── Indicateur connexion ─────────────────────────────── */
+    #conn-indicator {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      gap: 7px;
+      align-self: flex-end;
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-top: 4px;
     }
+    #conn-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #333;
+      flex-shrink: 0;
+    }
+    #conn-dot.connected    { background: var(--green); }
+    #conn-dot.disconnected { background: #ef4444; animation: blink-dot 1s infinite; }
+    @keyframes blink-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
 
+    /* ── Timer en direct ──────────────────────────────────── */
+    #live-display {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
     #live-timer {
-      font-size: clamp(52px, 15vw, 90px);
+      font-size: clamp(72px, 22vw, 110px);
       font-weight: 900;
       font-variant-numeric: tabular-nums;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
       line-height: 1;
+      color: var(--text);
       transition: color 0.3s;
     }
-
-    #live-meta {
+    #live-sub {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      min-height: 20px;
     }
     #live-phase {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.25em;
       text-transform: uppercase;
-      color: var(--work);
+      color: var(--red);
     }
-    #live-round { font-size: 12px; color: var(--muted); letter-spacing: 0.1em; }
-    #live-status { font-size: 12px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
+    #live-round  { font-size: 12px; color: var(--muted); letter-spacing: 0.1em; }
+    #live-status { font-size: 12px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; }
 
-    /* Couleurs d'état */
-    .timer-warning  { color: var(--warning) !important; }
-    .timer-finished { color: var(--danger)  !important; }
-    .timer-rest     { color: var(--rest)    !important; }
-    .phase-rest     { color: var(--rest)    !important; }
+    .timer-warning  { color: var(--orange) !important; }
+    .timer-finished { color: var(--red)    !important; }
+    .timer-rest     { color: var(--gray)   !important; }
+    .phase-rest     { color: var(--gray)   !important; }
 
-    /* ── Onglets mode ─────────────────────────────────────── */
+    /* ── Sélecteur de mode (pills) ────────────────────────── */
     #mode-tabs {
       display: flex;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 4px;
+      gap: 2px;
     }
     .tab-btn {
       flex: 1;
       background: none;
       border: none;
-      border-bottom: 3px solid transparent;
+      border-radius: 50px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      padding: 12px 4px 10px;
+      padding: 9px 6px;
       cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
+      transition: background 0.2s, color 0.2s;
     }
     .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      background: var(--red);
+      color: #fff;
     }
     .tab-btn:disabled { opacity: 0.35; cursor: default; }
 
-    /* ── Panneau de réglages ──────────────────────────────── */
+    /* ── Panneau réglages ─────────────────────────────────── */
     #settings-panel {
-      padding: 20px;
       flex: 1;
-    }
-    #settings-panel.locked {
-      pointer-events: none;
-      opacity: 0.4;
-    }
-
-    .setting-group { margin-bottom: 22px; }
-    .setting-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    /* Contrôle numérique +/- */
-    .num-control {
-      display: flex;
-      align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .num-btn {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 24px;
-      font-weight: 300;
-      padding: 0 20px;
-      height: 56px;
-      cursor: pointer;
-      transition: background 0.15s;
-      line-height: 1;
-    }
-    .num-btn:active { background: rgba(255,255,255,0.08); }
-    .num-display {
-      flex: 1;
-      text-align: center;
-      font-size: 22px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Grille 2 colonnes pour les réglages côte-à-côte */
-    .settings-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    /* ── Boutons de contrôle ──────────────────────────────── */
-    #controls {
-      padding: 16px 20px;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom));
-      border-top: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+    #settings-panel.locked {
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    .mode-panel { display: flex; flex-direction: column; gap: 10px; }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .setting-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px 14px;
+    }
+    .setting-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .num-control {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .num-btn {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 300;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .num-btn:active { background: rgba(255,255,255,0.18); }
+    .num-display {
+      flex: 1;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Boutons de contrôle ──────────────────────────────── */
+    #controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
     .ctrl-btn {
       border: none;
-      border-radius: var(--radius);
-      font-size: 17px;
+      border-radius: var(--r);
+      font-size: 16px;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       padding: 18px;
       cursor: pointer;
       transition: opacity 0.15s, transform 0.1s;
       text-transform: uppercase;
+      width: 100%;
     }
-    .ctrl-btn:active { transform: scale(0.97); opacity: 0.85; }
-    .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+    .ctrl-btn:active { transform: scale(0.98); opacity: 0.85; }
+    .ctrl-btn:disabled { opacity: 0.25; cursor: default; }
 
-    #btn-start  { background: var(--work); color: #fff; }
-    #btn-pause  { background: #1a1a1a; color: var(--warning); border: 1px solid var(--warning); }
-    #btn-reset  { background: var(--surface); color: var(--muted); border: 1px solid var(--border); font-size: 14px; padding: 14px; }
-
-    /* État actif : rang unique Start + Reset */
-    .row-running { display: flex; gap: 10px; }
-    .row-running #btn-pause { flex: 2; }
-    .row-running #btn-reset { flex: 1; }
+    #btn-start { background: var(--red); color: #fff; }
+    #btn-pause {
+      background: transparent;
+      color: var(--orange);
+      border: 1.5px solid var(--orange);
+    }
+    #btn-reset {
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid rgba(255,255,255,0.10);
+      font-size: 13px;
+      padding: 13px;
+    }
 
     /* ── Lien TV ──────────────────────────────────────────── */
     #tv-link-bar {
       text-align: center;
-      padding: 10px 20px 0;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
+      letter-spacing: 0.06em;
+      padding-bottom: 2px;
     }
-    #tv-link-bar a { color: var(--accent); text-decoration: none; }
+    #tv-link-bar a { color: var(--red); text-decoration: none; opacity: 0.8; }
   </style>
 </head>
 <body>
 
-  <!-- Timer en direct -->
+  <!-- Connexion -->
+  <div id="conn-indicator">
+    <div id="conn-dot"></div>
+    <span id="conn-label">Connexion…</span>
+  </div>
+
+  <!-- Timer -->
   <div id="live-display">
     <div id="live-timer">—:——</div>
-    <div id="live-meta">
+    <div id="live-sub">
       <div id="live-phase"></div>
       <div id="live-round"></div>
       <div id="live-status">EN ATTENTE</div>
     </div>
   </div>
 
-  <!-- Onglets mode -->
+  <!-- Mode -->
   <div id="mode-tabs">
     <button class="tab-btn active" data-mode="countdown">↩ Rebours</button>
     <button class="tab-btn"       data-mode="hiit">⚡ HIIT</button>
@@ -227,7 +268,7 @@
 
     <!-- Compte à rebours -->
     <div id="panel-countdown" class="mode-panel">
-      <div class="setting-group">
+      <div class="setting-card">
         <div class="setting-label">Durée</div>
         <div class="num-control">
           <button class="num-btn" data-target="cd-duration" data-step="-30">−</button>
@@ -240,7 +281,7 @@
     <!-- HIIT -->
     <div id="panel-hiit" class="mode-panel" style="display:none">
       <div class="settings-row">
-        <div class="setting-group">
+        <div class="setting-card">
           <div class="setting-label">Travail</div>
           <div class="num-control">
             <button class="num-btn" data-target="hiit-work" data-step="-15">−</button>
@@ -248,7 +289,7 @@
             <button class="num-btn" data-target="hiit-work" data-step="15">+</button>
           </div>
         </div>
-        <div class="setting-group">
+        <div class="setting-card">
           <div class="setting-label">Repos</div>
           <div class="num-control">
             <button class="num-btn" data-target="hiit-rest" data-step="-15">−</button>
@@ -257,7 +298,7 @@
           </div>
         </div>
       </div>
-      <div class="setting-group">
+      <div class="setting-card">
         <div class="setting-label">Rounds</div>
         <div class="num-control">
           <button class="num-btn" data-target="hiit-rounds" data-step="-1">−</button>
@@ -270,7 +311,7 @@
     <!-- Grappling -->
     <div id="panel-grappling" class="mode-panel" style="display:none">
       <div class="settings-row">
-        <div class="setting-group">
+        <div class="setting-card">
           <div class="setting-label">Round</div>
           <div class="num-control">
             <button class="num-btn" data-target="grap-round" data-step="-30">−</button>
@@ -278,7 +319,7 @@
             <button class="num-btn" data-target="grap-round" data-step="30">+</button>
           </div>
         </div>
-        <div class="setting-group">
+        <div class="setting-card">
           <div class="setting-label">Repos</div>
           <div class="num-control">
             <button class="num-btn" data-target="grap-rest" data-step="-15">−</button>
@@ -287,7 +328,7 @@
           </div>
         </div>
       </div>
-      <div class="setting-group">
+      <div class="setting-card">
         <div class="setting-label">Rounds</div>
         <div class="num-control">
           <button class="num-btn" data-target="grap-rounds" data-step="-1">−</button>
@@ -299,12 +340,10 @@
 
   </div>
 
-  <!-- Boutons de contrôle -->
+  <!-- Boutons -->
   <div id="controls">
     <div id="tv-link-bar">
-      TV → <a id="tv-link" href="/tv" target="_blank">/tv</a>
-      <span style="margin-left:8px;opacity:.4">|</span>
-      <span style="margin-left:8px;">Contrôle → <a id="ctrl-link" href="/control">/control</a></span>
+      <a id="tv-link" href="/tv" target="_blank">Ouvrir sur la TV</a>
     </div>
     <button class="ctrl-btn" id="btn-start">▶  Démarrer</button>
     <button class="ctrl-btn" id="btn-pause" style="display:none">⏸  Pause</button>
@@ -349,7 +388,6 @@
 
     Object.keys(values).forEach(k => updateDisplay(k));
 
-    // +/- buttons
     document.querySelectorAll('.num-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const key  = btn.dataset.target;
@@ -374,17 +412,38 @@
     });
 
     // ── Socket ─────────────────────────────────────────────
-    const socket = io();
+    const socket = io({
+      transports: ['polling', 'websocket'],   // polling d'abord — plus stable sur Railway
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000
+    });
 
-    const liveTimerEl = document.getElementById('live-timer');
-    const livePhaseEl = document.getElementById('live-phase');
-    const liveRoundEl = document.getElementById('live-round');
-    const liveStatusEl= document.getElementById('live-status');
+    const connDot   = document.getElementById('conn-dot');
+    const connLabel = document.getElementById('conn-label');
+
+    socket.on('connect', () => {
+      connDot.className = 'connected';
+      connLabel.textContent = 'Connecté';
+    });
+    socket.on('disconnect', () => {
+      connDot.className = 'disconnected';
+      connLabel.textContent = 'Déconnecté…';
+    });
+    socket.on('connect_error', () => {
+      connDot.className = 'disconnected';
+      connLabel.textContent = 'Erreur réseau';
+    });
+
+    const liveTimerEl  = document.getElementById('live-timer');
+    const livePhaseEl  = document.getElementById('live-phase');
+    const liveRoundEl  = document.getElementById('live-round');
+    const liveStatusEl = document.getElementById('live-status');
     const btnStart     = document.getElementById('btn-start');
     const btnPause     = document.getElementById('btn-pause');
     const btnReset     = document.getElementById('btn-reset');
     const settingsPanel= document.getElementById('settings-panel');
-    const controls     = document.getElementById('controls');
 
     const PHASE_LABELS = {
       countdown: { work: '' },
@@ -393,47 +452,37 @@
     };
 
     socket.on('state', (s) => {
-      // Live timer
       const isCountdown = s.status === 'countdown';
+
       liveTimerEl.textContent = s.status === 'idle'
         ? '—:——'
-        : isCountdown
-          ? s.countdownRemaining
-          : fmt(s.phaseRemaining);
+        : isCountdown ? s.countdownRemaining : fmt(s.phaseRemaining);
 
       liveTimerEl.className = '';
       liveTimerEl.style.opacity = '';
-      if (s.status === 'finished')        liveTimerEl.classList.add('timer-finished');
-      else if (s.status === 'paused')     liveTimerEl.style.opacity = '0.5';
-      else if (isCountdown)               liveTimerEl.style.color = '#fff';
-      else if (s.phaseRemaining <= 10 && s.status === 'running')
-                                          liveTimerEl.classList.add('timer-warning');
-      else if (s.phase === 'rest')        liveTimerEl.classList.add('timer-rest');
+      liveTimerEl.style.color   = '';
+      if      (s.status === 'finished')                                  liveTimerEl.classList.add('timer-finished');
+      else if (s.status === 'paused')                                    liveTimerEl.style.opacity = '0.4';
+      else if (isCountdown)                                              liveTimerEl.style.color = '#fff';
+      else if (s.phaseRemaining <= 10 && s.status === 'running')        liveTimerEl.classList.add('timer-warning');
+      else if (s.phase === 'rest')                                       liveTimerEl.classList.add('timer-rest');
 
-      // Phase
       const labels = PHASE_LABELS[s.mode] || {};
-      livePhaseEl.textContent = (s.status !== 'idle' && !isCountdown)
-        ? (labels[s.phase] || '') : '';
-      livePhaseEl.className = s.phase === 'rest' ? 'phase-rest' : '';
+      livePhaseEl.textContent = (s.status !== 'idle' && !isCountdown) ? (labels[s.phase] || '') : '';
+      livePhaseEl.className   = s.phase === 'rest' ? 'phase-rest' : '';
 
-      // Round
-      if (s.mode !== 'countdown' && s.status !== 'idle' && !isCountdown) {
-        liveRoundEl.textContent = `ROUND ${s.currentRound} / ${s.totalRounds}`;
-      } else {
-        liveRoundEl.textContent = '';
-      }
+      liveRoundEl.textContent = (s.mode !== 'countdown' && s.status !== 'idle' && !isCountdown)
+        ? `ROUND ${s.currentRound} / ${s.totalRounds}` : '';
 
-      // Status
       const statusMap = {
         idle:      'EN ATTENTE',
-        countdown: `DÉMARRAGE DANS ${s.countdownRemaining}…`,
+        countdown: `${s.countdownRemaining}…`,
         running:   'EN COURS',
         paused:    'PAUSE',
         finished:  'TERMINÉ'
       };
       liveStatusEl.textContent = statusMap[s.status] ?? '';
 
-      // Boutons & réglages
       if (s.status === 'running') {
         btnStart.style.display = 'none';
         btnPause.style.display = '';
@@ -442,10 +491,10 @@
         settingsPanel.classList.add('locked');
         document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
       } else if (isCountdown) {
-        btnStart.style.display = '';
-        btnStart.textContent   = '⏳  Démarrage…';
-        btnStart.disabled      = true;
-        btnPause.style.display = 'none';
+        btnStart.style.display  = '';
+        btnStart.textContent    = '⏳  Démarrage…';
+        btnStart.disabled       = true;
+        btnPause.style.display  = 'none';
         settingsPanel.classList.add('locked');
         document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
       } else if (s.status === 'paused') {
@@ -456,7 +505,6 @@
         settingsPanel.classList.add('locked');
         document.querySelectorAll('.tab-btn').forEach(b => b.disabled = true);
       } else {
-        // idle or finished
         btnStart.style.display = '';
         btnStart.textContent   = s.status === 'finished' ? '↺  Recommencer' : '▶  Démarrer';
         btnStart.disabled      = false;
@@ -479,27 +527,27 @@
       };
     }
 
-    btnStart.addEventListener('click', () => {
-      socket.emit('command', {
-        action: 'start',
-        payload: { mode: currentMode, settings: buildSettings() }
-      });
-    });
+    function sendCommand(action, payload) {
+      if (!socket.connected) {
+        connLabel.textContent = 'Reconnexion…';
+        connDot.className = 'disconnected';
+        // Réessayer une fois la reconnexion établie
+        socket.once('connect', () => {
+          socket.emit('command', { action, payload });
+          connLabel.textContent = 'Connecté';
+          connDot.className = 'connected';
+        });
+        return;
+      }
+      socket.emit('command', { action, payload });
+    }
 
-    btnPause.addEventListener('click', () => {
-      socket.emit('command', { action: 'pause' });
-    });
+    btnStart.addEventListener('click', () => sendCommand('start', { mode: currentMode, settings: buildSettings() }));
+    btnPause.addEventListener('click', () => sendCommand('pause'));
+    btnReset.addEventListener('click', () => sendCommand('reset'));
 
-    btnReset.addEventListener('click', () => {
-      socket.emit('command', { action: 'reset' });
-    });
-
-    // ── Lien TV (URL absolue) ──────────────────────────────
-    const base = window.location.origin;
-    document.getElementById('tv-link').href   = base + '/tv';
-    document.getElementById('tv-link').textContent = base + '/tv';
-    document.getElementById('ctrl-link').href = base + '/control';
-    document.getElementById('ctrl-link').textContent = base + '/control';
+    // Lien TV
+    document.getElementById('tv-link').href = window.location.origin + '/tv';
   </script>
 </body>
 </html>
